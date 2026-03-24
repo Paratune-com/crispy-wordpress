@@ -1,0 +1,17 @@
+services:
+  db:
+    image: mariadb:10.11
+    container_name: crispy_wp_mariadb
+    environment:
+      MYSQL_DATABASE: crispychicken_rest
+      MYSQL_USER: crispychicken_rest
+      MYSQL_PASSWORD: localdev_secret
+      MYSQL_ROOT_PASSWORD: root_local_only
+    ports:
+      - "3307:3306"
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 15

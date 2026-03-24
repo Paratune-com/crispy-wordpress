@@ -1,0 +1,37 @@
+# Credentials (use wp-config-sample.php + env on each environment)
+wp-config.php
+wp-config-local.php
+
+# Backups & migration archives (multi‑GB; not for Git)
+wp-content/ai1wm-backups/
+wp-content/updraft/
+
+# Uploaded media — deploy via host / rsync / separate storage
+wp-content/uploads/
+
+# Logs, cache, WordPress temp
+wp-content/debug.log
+wp-content/wflogs/
+wp-content/logs/
+wp-content/cache/
+wp-content/upgrade/
+wp-content/upgrade-temp-backup/
+wp-content/ewww/
+
+# Old copies inside wp-content
+wp-content/uploads-old/
+wp-content/languages-old/
+wp-content/fonts-old/
+wp-content/themes-old/
+wp-content/plugins-old/
+
+# OS / editor noise
+.DS_Store
+.tmb/
+Thumbs.db
+*.swp
+*~
+
+# Dependencies (if introduced later)
+node_modules/
+vendor/
