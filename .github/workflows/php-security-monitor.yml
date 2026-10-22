@@ -1,0 +1,66 @@
+name: PHP security monitor
+
+# Checks application dependencies and tracked secrets.
+# This does not patch the PHP runtime. CVE-2026-109618 and CVE-2026-109619
+# are fixed only by a patched PHP build. Run scripts/php-runtime-check.sh
+# on each server, then upgrade and restart PHP-FPM or Apache with approval.
+#
+# Scheduled runs are omitted on purpose. This organization already had to
+# disable automatic security workflows because GitHub Actions billing was
+# blocking ubuntu-latest jobs and burning quota.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "composer.json"
+      - "composer.lock"
+      - "**.php"
+      - ".github/workflows/php-security-monitor.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  php-application-security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Reject tracked environment files
+        run: |
+          set -euo pipefail
+          tracked="$(git ls-files | grep -E '(^|/)\.env$' || true)"
+          if [ -n "$tracked" ]; then
+            echo "Tracked .env files must not be committed:"
+            printf '%s\n' "$tracked"
+            exit 1
+          fi
+
+      - name: Review dangerous PHP execution calls
+        run: |
+          set -euo pipefail
+          if ! git ls-files '*.php' | grep -q .; then
+            echo "No tracked PHP files."
+            exit 0
+          fi
+          matches="$(git grep -n -E '(\beval\s*\(|\bassert\s*\(|\bshell_exec\s*\(|\bpassthru\s*\(|\bproc_open\s*\(|\bpopen\s*\()' -- '*.php' | grep -v -E '(^|/)vendor/' || true)"
+          if [ -n "$matches" ]; then
+            echo "Review these calls. They are reported and do not fail the job, because some are legitimate."
+            printf '%s\n' "$matches"
+          else
+            echo "No eval, assert, or shell execution calls in tracked PHP outside vendor."
+          fi
+
+      - name: Setup PHP
+        if: hashFiles('composer.lock') != ''
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          coverage: none
+          tools: composer
+
+      - name: Composer dependency audit
+        if: hashFiles('composer.lock') != ''
+        run: composer audit --locked --no-interaction
